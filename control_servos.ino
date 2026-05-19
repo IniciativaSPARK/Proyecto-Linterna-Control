@@ -15,6 +15,7 @@ void setup() {
 
   Serial.println("Ingrese dos angulos separados por coma");
   Serial.println("Ejemplo: 90,45");
+  // CUIDADO, AL ENVIAR POR SERIAL MONITOR COLOCAR "No Line Ending"
 }
 
 void loop() {
