@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ESP32 GY-521 Dashboard</title>
+
+<style>
+
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0f172a;
+    color:white;
+}
+
+.container{
+    width:90%;
+    margin:auto;
+    text-align:center;
+    padding-top:40px;
+}
+
+h1{
+    font-size:40px;
+}
+
+.card{
+    background:#1e293b;
+    padding:30px;
+    border-radius:20px;
+    margin-top:20px;
+}
+
+.value{
+    font-size:60px;
+    font-weight:bold;
+}
+
+.bar{
+    width:100%;
+    height:30px;
+    background:#334155;
+    border-radius:20px;
+    overflow:hidden;
+    margin-top:20px;
+}
+
+.fillX{
+    height:100%;
+    width:50%;
+    background:cyan;
+    transition:0.2s;
+}
+
+.fillY{
+    height:100%;
+    width:50%;
+    background:hotpink;
+    transition:0.2s;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>ESP32 + GY521</h1>
+
+    <div class="card">
+
+        <h2>Eje X</h2>
+
+        <div class="value" id="xValue">0</div>
+
+        <div class="bar">
+            <div class="fillX" id="barX"></div>
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Eje Y</h2>
+
+        <div class="value" id="yValue">0</div>
+
+        <div class="bar">
+            <div class="fillY" id="barY"></div>
+        </div>
+
+    <div class="card">
+
+        <h2>Eje Z</h2>
+
+        <div class="value" id="zValue">0</div>
+
+        <div class="bar">
+            <div class="fillY" id="barZ"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+async function obtenerDatos(){
+
+    try{
+
+        const respuesta = await fetch("http://192.168.18.32:8080");
+
+        const texto = await respuesta.text();
+
+        console.log(texto);
+
+        // x=1.52,y=-3.25
+
+        let partes = texto.split(",");
+
+        let x = parseFloat(partes[0].split("=")[1]);
+
+        let y = parseFloat(partes[1].split("=")[1]);
+
+        let z = parseFloat(partes[2].split("=")[1]);
+
+        document.getElementById("xValue").innerText = x.toFixed(2);
+
+        document.getElementById("yValue").innerText = y.toFixed(2);
+        document.getElementById("zValue").innerText = z.toFixed(2);
+
+
+        // convertir a porcentaje
+
+        let porcentajeX = ((x + 20) / 40) * 100;
+        let porcentajeY = ((y + 20) / 40) * 100;
+        let porcentajeZ = ((z + 20) / 40) * 100;
+
+        
+
+        document.getElementById("barX").style.width = porcentajeX + "%";
+
+        document.getElementById("barY").style.width = porcentajeY + "%";
+        document.getElementById("barZ").style.width = porcentajeZ + "%";
+
+
+    }
+    catch(error){
+
+        console.log(error);
+    }
+}
+
+setInterval(obtenerDatos, 200);
+
+</script>
+
+</body>
+</html>
