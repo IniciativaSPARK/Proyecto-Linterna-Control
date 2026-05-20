@@ -217,3 +217,6 @@ if __name__ == "__main__":
             arduino.close()
 
         server.server_close()
+
+
+#probanado jeje
