@@ -219,4 +219,4 @@ if __name__ == "__main__":
         server.server_close()
 
 
-#probanado jeje
+# HASTA ACA FUNCIONA TODO EUREKAAAA
