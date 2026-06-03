@@ -11,7 +11,7 @@ void setup() {
   servoPan.attach(3);   // Servo horizontal
   servoTilt.attach(5);  // Servo vertical
 
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   Serial.println("Ingrese dos angulos separados por coma");
   Serial.println("Ejemplo: 90,45");
