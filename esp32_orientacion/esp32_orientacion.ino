@@ -1,116 +1,90 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Wire.h>
-
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 
 Adafruit_MPU6050 mpu;
 
-const char* ssid = "wifi";
-const char* password = "Gonzalito2014";
+const char* ssid       = "Galaxy S24 FF70";
+const char* password   = "Kserola2830";
+const char* serverName = "http://10.31.54.179:8080";
 
-const char* serverName = "http://10.122.63.179:8080";
+unsigned long lastTime   = 0;
+unsigned long timerDelay = 20;
 
-unsigned long lastTime = 0;
-unsigned long timerDelay = 200;
+WiFiClient client;
+HTTPClient http;
+
+//  Guardar últimos valores enviados
+float lastX = 0, lastY = 0, lastZ = 0;
 
 void setup() {
-
-  Serial.begin(9600);
-
-  // SDA = 21
-  // SCL = 22
+  Serial.begin(115200);
   Wire.begin(21, 22);
 
   if (!mpu.begin()) {
-
     Serial.println("No se encontró MPU6050");
-
-    while (1) {
-      delay(10);
-    }
+    while (1) delay(10);
   }
-
   Serial.println("MPU6050 iniciado");
 
   WiFi.begin(ssid, password);
-
-  Serial.print("Conectando a ");
-  Serial.println(ssid);
-
   int intentos = 0;
-
   while (WiFi.status() != WL_CONNECTED) {
-
     delay(500);
     Serial.print(".");
-
-    intentos++;
-
-    if(intentos >= 20){
-
-      Serial.println("\nNo se pudo conectar al WiFi");
-
-      Serial.print("Estado WiFi: ");
-      Serial.println(WiFi.status());
-
+    if (++intentos >= 20) {
+      Serial.println("\nNo se pudo conectar");
       ESP.restart();
     }
   }
-
-  Serial.println("");
-  Serial.println("WiFi conectado");
-
-  Serial.print("IP ESP32: ");
-  Serial.println(WiFi.localIP());
+  Serial.println("\nWiFi conectado: " + WiFi.localIP().toString());
 }
 
 void loop() {
-
-  if ((millis() - lastTime) > timerDelay) {
+  if ((millis() - lastTime) >= timerDelay) {
+    lastTime = millis();
 
     if (WiFi.status() == WL_CONNECTED) {
-
       sensors_event_t a, g, temp;
-
       mpu.getEvent(&a, &g, &temp);
 
       float x = a.acceleration.x;
       float y = a.acceleration.y;
       float z = a.acceleration.z;
 
+      //  Solo enviar si algún eje cambió más de 2 unidades
+      if (abs(x - lastX) >= 2.0 || abs(y - lastY) >= 2.0 || abs(z - lastZ) >= 2.0) {
 
-      Serial.print("X: ");
-      Serial.print(x);
+        lastX = x;
+        lastY = y;
+        lastZ = z;
 
-      Serial.print(" Y: ");
-      Serial.println(y);
-      Serial.print(" Z: ");
-      Serial.println(z);
-      
+        String datos = "x=" + String(x, 2) + ",y=" + String(y, 2) + ",z=" + String(z, 2);
 
-      WiFiClient client;
-      HTTPClient http;
+        http.begin(client, serverName);
+        http.addHeader("Content-Type", "text/plain");
 
-      http.begin(client, serverName);
+        int httpCode = http.POST(datos);
 
-      http.addHeader("Content-Type", "text/plain");
+        if (httpCode < 0) {
+          Serial.println("Error HTTP, reconectando...");
+          WiFi.reconnect();
+        } else {
+          Serial.printf("Enviado: %s | HTTP: %d\n", datos.c_str(), httpCode);
+        }
 
-      String datos = "x=" + String(x) + ",y=" + String(y) + ",z=" + String(z);
+        http.end();
 
-      int httpResponseCode = http.POST(datos);
-
-      Serial.print("Código HTTP: ");
-      Serial.println(httpResponseCode);
-
-      http.end();
+      } else {
+        Serial.printf("Sin cambio — X:%.2f Y:%.2f Z:%.2f\n", x, y, z);
+      }
 
     } else {
-
-      Serial.println("WiFi desconectado");
+      Serial.println("WiFi desconectado, reconectando...");
+      WiFi.reconnect();
+      delay(1000);
     }
-
-    lastTime = millis();
   }
 }
